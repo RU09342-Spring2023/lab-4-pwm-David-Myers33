@@ -1,21 +1,21 @@
-//Luciano Miles Miletta
-//Embedded Systems
-//LAB 4 PART 2
-
+ //Created on: Feb 28, 2023
+// Author: David Myers
 #include <msp430.h>
 
-void TimerA0Setup(); // Initialize Timer0
-void TimerA1Setup(); // Initialize Timer1
-void TimerA3Setup(); //Initiallize Timer 3
+
+void TimerA3Setup();
 void LEDSetup();
 
-
+int count;
+int color;
+color = 0;
+count = 0;
 
 void main()
 {
 
-    WDTCTL = WDTPW | WDTHOLD;                   // stop watchdog timer
-
+//    WDTCTL = WDTPW | WDTHOLD;                   // stop watchdog timer
+    WDTCTL = WDT_ADLY_1000;                       //
     TimerA3Setup();
     LEDSetup();
 
@@ -25,85 +25,93 @@ void main()
     __no_operation();                           // For debugger
 }
 
-void TimerA0Setup()                             // Setup Timer 0
+
+void TimerA3Setup()                             // Setup Timer 0
 {
-    TB0CCR0 = 1000-1;                         // PWM Period
-    TB0CCTL1 = OUTMOD_7;                      // CCR1 reset/set
-    TB0CCR1 = 800;                            // CCR1 PWM duty cycle
-    TB0CTL = TBSSEL__SMCLK | MC__UP | TBCLR;  // SMCLK, up mode, clear TBR
-}
-
-
-
-
-
-void TimerA1Setup()                             // Setup Timer 1
-{
-    TB1CCR0 = 1000-1;                         // PWM Period
-    TB1CCTL1 = OUTMOD_7;                      // CCR1 reset/set
-    TB1CCR1 = 800;                            // CCR1 PWM duty cycle
-    TB1CTL = TBSSEL__SMCLK | MC__UP | TBCLR;  // SMCLK, up mode, clear TBR
-}
-
-
-
-
-
-void TimerA3Setup()                             // Setup Timer 3
-{
-    TB3CCR0 = 1000-1;                         // PWM Period
+    TB3CCTL0 |= CCIE;                       // Enable TB0 CCR0 Overflow IRQ
+    TB3CCR0 = 0xFFFF;                         // PWM Period
     TB3CCTL1 = OUTMOD_7;                      // CCR1 reset/set
     TB3CCR1 = 800;                            // CCR1 PWM duty cycle
-    TB3CTL = TBSSEL__SMCLK | MC__UP | TBCLR;  // SMCLK, up mode, clear TBR
+    TB3CTL = TBSSEL__SMCLK | ID_3 | MC__UP | TBCLR; // SMCLK, up mode, clear TBR
 }
-
-
 
 
 void LEDSetup()
 {
-
-
-    //P6DIR |= BIT0;                     // P6.0 output
+    P6DIR |= BIT0;                      ///MAKES RED
     P6SEL0 |= BIT0;
-    P6SEL1 &= ~BIT0;                    // P6.0 options select (RED)
-
-
-    //P6DIR |= BIT1;                     // P6.1 output
-    P6SEL0 |= BIT1;
-    P6SEL1 &= ~BIT1;                    // P6.1 options select (Green)
-
-
-    //P6DIR |= BIT2;                     // P6.2 output
-    P6SEL0 |= BIT2;
-    P6SEL1 &= ~BIT2;                    // P6.2 options select (Blue)
-
+    P6SEL1 &= ~BIT0;                    // P6.0 options select
 }
 
-#pragma vector = TIMER0_B0_VECTOR
-__interrupt void Timer0_B0_ISR(void)
+#pragma vector=TIMER3_B0_VECTOR
+__interrupt void TIMER3_B0_ISR(void)
 {
+   count ++;
+    if (count == 2)
+       {
+       if (color == 0)
+       {
+            color = 1;
+            P6DIR |= BIT1;                     // P6.0 output           ////ADD Green
+            P6SEL0 |= BIT1;
+            P6SEL1 &= ~BIT0;                    // P6.0 options select
 
-if (TB0CCR1 >= 800)
-{
-    TB0CCR1 += 100;
+            count = 0;
+
+            //ORANGE
+       }
+       else if (color == 1)
+       {
+           P6DIR &= ~ BIT0;                     // P6.0 output        ///STOPS RED
+           P6SEL0 |= BIT0;
+           P6SEL1 &= ~BIT0;                    // P6.0 options select
+
+           //GREEN
+            color = 2;
+            count = 0;
+        }
+       else if (color == 2)
+       {
+           P6DIR |= BIT2;                     // P6.0 output               ///ADDS BlUE MAKING CYAN
+           P6SEL0 |= BIT2;
+           P6SEL1 &= ~BIT0;                    // P6.0 options select
+
+
+
+           color = 3;
+           count = 0;
+
+       }
+       else if (color == 3)
+       {
+           P6DIR &= ~ BIT1;                     // P6.0 output              ///STOPS GREEN
+           P6SEL0 |= BIT0;
+           P6SEL1 &= ~BIT0;                    // P6.0 options select
+           //JUST BLUE
+
+          color = 4;
+          count = 0;
+       }
+       else if (color == 4)
+       {
+         P6DIR |= BIT0;         ///MAKES RED
+         P6SEL0 |= BIT0;
+         P6SEL1 &= ~BIT0;                    // P6.0 options select
+         //LEFT with purple
+         color = 5;
+         count = 0;
+       }
+       else if (color ==5)
+       {
+        P6DIR &= ~BIT2;                     // P6.0 output               ///STOPS BlUE
+        P6SEL0 |= BIT0;
+        P6SEL1 &= ~BIT0;                    // P6.0 options select
+                       //Get rid of blue
+       //LEFT WITH RED
+        color = 0;
+        count = 0;
+       }
+
+        }
 
 }
-
-}
-
-
-
-
-//#pragma vector = TIMER1_B0_VECTOR
-//__interrupt void Timer1_B0_ISR(void)
-
-
-
-
-
-
-
-//#pragma vector = TIMER3_B0_VECTOR
-//__interrupt void Timer3_B0_ISR(void)
-
