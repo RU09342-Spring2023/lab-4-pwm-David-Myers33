@@ -15,7 +15,7 @@ to experiment with it as well.
 
 
 
-
+//test to verify if addition worked
 
 void LEDSetup(); // Initialize our LEDS
 void ButtonSetup();  // Initialize our button
